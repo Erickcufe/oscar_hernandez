@@ -1,0 +1,263 @@
+---
+title: "Material 1 Oscar"
+format: pdf
+editor: visual
+---
+
+## Introducción RMarkdown
+
+Es la combinación de markdown, código en R y su evaluación. Esto esta englobado en un archivo `.Rmd` el cual tiene:
+
+-   YAML (Meta datos): La sección YAML al principio del archivo contiene metadatos como título, autor, fecha y otros datos que se utilizan para configurar el documento.
+
+-   Markdown: El texto del documento se escribe en Markdown, un lenguaje de marcado ligero y fácil de leer. El Markdown se utiliza para definir la estructura y el formato del texto, incluyendo títulos, párrafos, enlaces, listas, etc.
+
+-   Código R: El archivo `.Rmd` también contiene código R, que se ejecuta para generar gráficos, tablas y otros resultados que se incluyen en el documento. El código R se encapsula dentro de bloques de código, denotados por triple barras inversas (\`\`\`\`\`) y se puede personalizar con opciones como `echo` y `eval` para controlar la visualización y evaluación del código.
+
+### Estructura de un documento `.Rmd`
+
+-   YAML
+
+```{r, eval=FALSE}
+---
+title: "Mi Primer Documento"
+author: "Tu Nombre"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```
+
+-   Secciones con encabezados `#,##, ###`.
+
+-   Codigo en R usando bloques
+
+```{r}
+summary(mtcars)
+```
+
+### Texto básico y formato
+
+-   **Negritas**, *Itálicas* y `Código en línea`
+
+-   Listas numeradas y con viñetas:
+
+    -   Item 1
+
+    -   Item 2
+
+### Agregar enlaces e imágenes 
+
+-   Enlaces
+
+```{r, eval=FALSE}
+[Enlace a Google](https://www.google.com)
+
+```
+
+-   Imágenes
+
+```{r, eval=FALSE}
+![Texto alternativo](imagen.png)
+
+```
+
+### Bloques de código en R
+
+-   Inserción de código en R:
+
+```{r}
+x <- rnorm(100)
+hist(x)
+
+```
+
+-   Configuración de chunks
+
+    Opciones de chunks (`echo`, `eval`, `message`, `warning`).
+
+### Tables en RMakdown
+
+Creación de tablas con `knitr::kable()`.
+
+```{r}
+knitr::kable(head(mtcars), caption = "Tabla de ejemplo")
+
+```
+
+Referencias a ecuaciones, figuras y tablas
+
+```{r, eval = FALSE}
+![Mi Figura](figura.png){#figura1}
+
+```
+
+```{r, eval=FALSE}
+Como se ve en la Figura \@ref(figura1)...
+
+```
+
+## K-Nearest Neighbors (KNN) en R
+
+Para implementar KNN en R, es necesario instalar algunas librerías.
+
+```{r, eval=FALSE}
+# Instalamos las librerías necesarias
+install.packages("class")   # Paquete para KNN
+install.packages("caret")   # Paquete para manejo de datos y validación cruzada
+install.packages("ggplot2") # Paquete para visualización (opcional)
+
+```
+
+### Cómo funciona KNN
+
+-   KNN clasifica un nuevo dato basado en la distancia a sus vecinos más cercanos.
+
+-   Los pasos para la clasificación con KNN:
+
+    1.  Elegir el número de vecinos `k`.
+
+    2.  Calcular la distancia entre el punto nuevo y todos los puntos del dataset.
+
+    3.  Clasificar el nuevo punto basado en la mayoría de los vecinos más cercanos.
+
+### Normalización de datos
+
+KNN es un algoritmo basado en distancia, por lo que es muy sensible a la escala de los datos. **Normalizar** o **escalar** las variables es crucial.
+
+```{r}
+# Ejemplo de normalización
+data(iris)
+
+# Seleccionamos las variables predictoras
+predictors <- iris[, 1:4]
+
+# Normalizamos las variables predictoras
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+predictors_normalized <- as.data.frame(lapply(predictors, normalize))
+
+# Mostramos las primeras filas de los datos normalizados
+head(predictors_normalized)
+
+```
+
+### División de los conjuntos de entrenamiento y prueba
+
+Antes de aplicar KNN, es fundamental dividir los datos en un **conjunto de entrenamiento** y un **conjunto de prueba**.
+
+```{r, message=FALSE}
+# Cargamos la librería caret
+library(caret)
+
+# Dividimos el dataset en 80% entrenamiento y 20% prueba
+set.seed(123)
+trainIndex <- createDataPartition(iris$Species, p = 0.8, 
+                                  list = FALSE, 
+                                  times = 1)
+
+# Conjunto de entrenamiento y prueba
+trainData <- iris[trainIndex, ]
+testData <- iris[-trainIndex, ]
+
+```
+
+### Implementación de KNN en R
+
+En este ejemplo, vamos a usar el dataset **iris** para predecir la especie de una flor en base a sus características numéricas (largo y ancho de pétalos y sépalos).
+
+```{r}
+# Cargamos la librería class para KNN
+library(class)
+
+# Aplicamos el modelo KNN
+predicted_species <- knn(train = trainData[, 1:4], 
+                         test = testData[, 1:4], 
+                         cl = trainData$Species, 
+                         k = 3)
+
+# Mostramos las predicciones
+predicted_species
+
+```
+
+### Evaluación del modelo
+
+Evaluar la precisión del modelo es esencial para ver si está funcionando correctamente.
+
+```{r}
+# Comparamos las predicciones con las etiquetas verdaderas
+accuracy <- sum(predicted_species == testData$Species) / nrow(testData)
+
+# Mostramos la precisión
+print(paste("Precisión del modelo: ", round(accuracy * 100, 2), "%"))
+
+```
+
+### Visualización de resultados
+
+Una forma útil de visualizar los resultados es usar gráficos. Podemos ver cómo KNN clasifica los puntos usando gráficos de dispersión.
+
+```{r, message=FALSE}
+# Cargamos ggplot2 para gráficos
+library(ggplot2)
+
+# Agregamos las predicciones al dataset de prueba
+testData$Predicted_Species <- predicted_species
+
+# Visualizamos los resultados de clasificación
+ggplot(testData, aes(x = Sepal.Length, y = Sepal.Width, color = Predicted_Species)) +
+  geom_point(size = 3) +
+  labs(title = "Resultados de KNN", x = "Largo de Sépalo", y = "Ancho de Sépalo") +
+  theme_minimal()
+
+```
+
+### Ajuste de Parámetros y Validación cruzada
+
+Podemos probar diferentes valores de `k` para ver cuál da mejores resultados.
+
+```{r}
+# Creamos una función para probar diferentes valores de k
+evaluate_knn <- function(k_value) {
+  predicted_species <- knn(train = trainData[, 1:4], 
+                           test = testData[, 1:4], 
+                           cl = trainData$Species, 
+                           k = k_value)
+  accuracy <- sum(predicted_species == testData$Species) / nrow(testData)
+  return(accuracy)
+}
+
+# Probamos valores de k desde 1 hasta 10
+k_values <- 1:10
+accuracies <- sapply(k_values, evaluate_knn)
+
+# Mostramos los resultados
+plot(k_values, accuracies, type = "b", col = "blue", xlab = "Valor de k", ylab = "Precisión")
+
+```
+
+### Validación cruzada
+
+Es recomendable usar **validación cruzada** para obtener una estimación más precisa del rendimiento del modelo.
+
+```{r}
+# Usamos trainControl para validación cruzada
+train_control <- trainControl(method = "cv", number = 10)
+
+# Aplicamos KNN con validación cruzada
+knn_cv <- train(Species ~ ., data = iris, method = "knn", 
+                trControl = train_control, tuneLength = 10)
+
+# Mostramos los resultados del mejor k
+print(knn_cv)
+
+```
+
+-   KNN es un algoritmo de clasificación simple pero poderoso que se basa en la proximidad entre puntos de datos.
+
+-   Es crucial preparar bien los datos normalizando las variables y seleccionando un valor adecuado de `k`.
+
+-   Se pueden mejorar los resultados usando técnicas como la validación cruzada.
